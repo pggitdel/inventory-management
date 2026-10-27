@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Architecture - Factory Inventory Management</title>
+<style>
+  :root { --ink:#0f172a; --muted:#64748b; --line:#e2e8f0; --bg:#f8fafc; --card:#fff; --accent:#2563eb; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; color:var(--ink); background:var(--bg); line-height:1.5; }
+  header { background:var(--ink); color:#fff; padding:36px 24px; }
+  header h1 { margin:0 0 6px; font-size:26px; font-weight:600; }
+  header p { margin:0; color:#cbd5e1; }
+  main { max-width:1040px; margin:0 auto; padding:32px 24px 64px; }
+  h2 { font-size:18px; margin:40px 0 14px; padding-bottom:8px; border-bottom:1px solid var(--line); }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:18px 20px; }
+  .grid { display:grid; gap:16px; }
+  .g3 { grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); }
+  .card h3 { margin:0 0 8px; font-size:14px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); }
+  ul { margin:0; padding-left:18px; } li { margin:3px 0; }
+  code { background:#f1f5f9; padding:1px 5px; border-radius:4px; font-size:12.5px; }
+  .tiers { display:flex; align-items:stretch; gap:12px; flex-wrap:wrap; }
+  .tier { flex:1 1 220px; background:var(--card); border:1px solid var(--line); border-top:3px solid var(--accent); border-radius:8px; padding:16px 18px; }
+  .tier.api { border-top-color:#0f766e; } .tier.data { border-top-color:#b45309; }
+  .tier h3 { margin:0 0 2px; font-size:15px; } .tier .port { color:var(--muted); font-size:12.5px; margin-bottom:10px; }
+  .arrow { align-self:center; color:var(--muted); font-size:12px; text-align:center; min-width:70px; }
+  .arrow b { display:block; font-size:22px; color:var(--ink); }
+  table { width:100%; border-collapse:collapse; background:var(--card); border:1px solid var(--line); border-radius:8px; overflow:hidden; font-size:14px; }
+  th, td { text-align:left; padding:9px 14px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { background:#f1f5f9; font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); }
+  tr:last-child td { border-bottom:none; }
+  ol.flow { list-style:none; counter-reset:s; margin:0; padding:0; }
+  ol.flow li { counter-increment:s; position:relative; padding:12px 16px 12px 52px; background:var(--card); border:1px solid var(--line); border-radius:8px; margin:0 0 10px; }
+  ol.flow li::before { content:counter(s); position:absolute; left:14px; top:12px; width:26px; height:26px; border-radius:50%; background:var(--ink); color:#fff; font-size:13px; text-align:center; line-height:26px; }
+  .note { background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:12px 16px; font-size:14px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Factory Inventory Management System</h1>
+  <p>Architecture overview: system layout, tech stack, and data flow</p>
+</header>
+<main>
+
+<h2>System Architecture</h2>
+<div class="tiers">
+  <div class="tier">
+    <h3>Frontend</h3><div class="port">Vue 3 + Vite, port 3000</div>
+    <ul>
+      <li>7 views: Dashboard, Inventory, Orders, Demand, Spending, Reports, Backlog</li>
+      <li>Vue Router (6 routes; Backlog is a Dashboard sub-view)</li>
+      <li>Shared filter state: <code>useFilters.js</code></li>
+      <li>i18n (en, ja), auth composable, detail modals</li>
+    </ul>
+  </div>
+  <div class="arrow"><b>&#8594;</b>HTTP / JSON<br>axios</div>
+  <div class="tier api">
+    <h3>Backend API</h3><div class="port">FastAPI + Uvicorn, port 8001</div>
+    <ul>
+      <li><code>main.py</code>: routes, filtering, aggregation</li>
+      <li>Pydantic models validate responses</li>
+      <li>CORS open to all origins</li>
+      <li>Auto docs at <code>/docs</code></li>
+    </ul>
+  </div>
+  <div class="arrow"><b>&#8594;</b>import at<br>startup</div>
+  <div class="tier data">
+    <h3>Data</h3><div class="port">In-memory, no database</div>
+    <ul>
+      <li><code>mock_data.py</code> loads JSON once on import</li>
+      <li>7 files in <code>server/data/</code></li>
+      <li><code>generate_data.py</code> regenerates the data</li>
+    </ul>
+  </div>
+</div>
+
+<h2>Tech Stack</h2>
+<div class="grid g3">
+  <div class="card"><h3>Frontend</h3><ul>
+    <li>Vue 3 (Composition API)</li><li>Vue Router 4</li><li>Vite 8</li><li>Axios</li><li>Custom SVG charts, CSS Grid</li></ul></div>
+  <div class="card"><h3>Backend</h3><ul>
+    <li>Python 3.11+</li><li>FastAPI</li><li>Pydantic 2</li><li>Uvicorn</li><li>uv for dependency management</li></ul></div>
+  <div class="card"><h3>Testing &amp; Tooling</h3><ul>
+    <li>pytest + FastAPI TestClient</li><li>httpx, pytest-cov</li><li><code>scripts/start.sh</code>, <code>stop.sh</code></li></ul></div>
+</div>
+
+<h2>API Endpoints</h2>
+<table>
+  <tr><th>Endpoint</th><th>Filters</th><th>Purpose</th></tr>
+  <tr><td><code>GET /api/inventory</code>, <code>/{id}</code></td><td>warehouse, category</td><td>Stock levels and item detail</td></tr>
+  <tr><td><code>GET /api/orders</code>, <code>/{id}</code></td><td>warehouse, category, status, month</td><td>Customer orders</td></tr>
+  <tr><td><code>GET /api/dashboard/summary</code></td><td>all four</td><td>Aggregated KPIs for the dashboard</td></tr>
+  <tr><td><code>GET /api/demand</code>, <code>/api/backlog</code></td><td>none</td><td>Forecasts; backlog with purchase-order flag</td></tr>
+  <tr><td><code>GET /api/spending/*</code></td><td>none</td><td>Summary, monthly, categories, transactions</td></tr>
+  <tr><td><code>GET /api/reports/*</code></td><td>none</td><td>Quarterly reports and monthly trends</td></tr>
+</table>
+
+<h2>Data Flow</h2>
+<ol class="flow">
+  <li><b>User changes a filter</b> (Time Period, Warehouse, Category, Order Status). State lives in the singleton refs in <code>useFilters.js</code>, shared by all views.</li>
+  <li><b>View calls <code>client/src/api.js</code></b>, which builds query params (skipping "all") and sends an axios GET to <code>localhost:8001/api</code>.</li>
+  <li><b>FastAPI route handles the request</b> and filters the in-memory lists with <code>apply_filters</code> / <code>filter_by_month</code>.</li>
+  <li><b>Pydantic validates</b> the result against the response model and returns JSON.</li>
+  <li><b>View stores raw data in refs</b> (<code>allOrders</code>, <code>inventoryItems</code>); <b>computed properties</b> derive the charts, totals, and tables that render.</li>
+</ol>
+
+<h2>Notes</h2>
+<div class="note">
+  <b>Known gap:</b> <code>api.js</code> defines <code>POST /tasks</code> and <code>POST /purchase-orders</code> calls, and <code>main.py</code> defines a <code>CreatePurchaseOrderRequest</code> model, but the backend has no POST routes. Those calls would return 404 today.
+  Also, inventory filters do not support month (inventory has no time dimension), and all data resets on server restart.
+</div>
+
+</main>
+</body>
+</html>
